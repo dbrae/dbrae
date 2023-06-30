@@ -1,0 +1,76 @@
+import subprocess
+import pandas as pd
+from sqlalchemy import create_engine
+from sqlalchemy.sql import text
+import os
+
+# Execute the first script
+webscrape_process = subprocess.run(['python', 'path/to/webscrape.py'])
+if webscrape_process.returncode != 0:
+    print('Error occurred while running webscrape.py')
+
+# Execute the second script to clean up the data
+dataclean_process = subprocess.run(['python', 'path/to/dataclean.py'])
+if dataclean_process.returncode != 0:
+    print('Error occurred while running dataclean.py')
+
+# Directory path for the cleaned CSV files
+cleaned_csv_dir = 'path/to/cleaned_csv_dir'
+
+# Get the list of cleaned CSV files
+csv_files = [f for f in os.listdir(cleaned_csv_dir) if f.endswith('.csv')]
+
+# Sort the CSV files by modified time in descending order
+csv_files.sort(key=lambda x: os.path.getmtime(os.path.join(cleaned_csv_dir, x)), reverse=True)
+
+# Choose the most recent CSV file
+most_recent_csv = csv_files[0]
+csv_file_path = os.path.join(cleaned_csv_dir, most_recent_csv)
+
+# Load the cleaned data from the most recent CSV
+cleaned_data = pd.read_csv(csv_file_path)
+
+# Fill blank entries in "maintenance_fee" column with None
+cleaned_data['maintenance_fee'] = cleaned_data['maintenance_fee'].replace('', None)
+
+# Read PostgreSQL credentials from file
+with open('path/to/postgres_credentials.txt', 'r') as file:
+    postgres_credentials = file.read().splitlines()
+
+# Create an SQLAlchemy engine for PostgreSQL connection
+engine = create_engine(f"postgresql://{postgres_credentials[1]}:{postgres_credentials[2]}@{postgres_credentials[3]}/{postgres_credentials[0]}")
+
+with engine.connect() as conn:
+    # Simplified Insert statement
+    insert_query = text("""
+        INSERT INTO realestate (address, price, bedrooms, listed, maintenance_fee, neighborhood, last_updated, bathrooms, parking, sqft, mls, ppsqft)
+        VALUES (:address, :price, :bedrooms, :listed, :maintenance_fee, :neighborhood, :last_updated, :bathrooms, :parking, :sqft, :mls, :ppsqft);
+    """)
+
+    # Loop over the data and insert each record
+    for record in cleaned_data.to_dict('records'):
+        try:
+            conn.execute(insert_query, record)
+        except Exception as e:
+            print(f"Error occurred while inserting record: {e}")  # Print error message if exception occurs
+            print(f"Record with address {record['address']} was not inserted")
+            continue  # If an error occurs (e.g., a duplicate key error), skip to the next record
+
+    # Delete duplicate records based on the 'address' column
+    delete_duplicates_query = text("""
+        DELETE FROM realestate
+        WHERE (address, last_updated) NOT IN (
+            SELECT address, MAX(last_updated)
+            FROM realestate
+            GROUP BY address
+        );
+    """)
+
+    try:
+        result = conn.execute(delete_duplicates_query)
+        num_deleted = result.rowcount
+        print(f"Deleted {num_deleted} duplicate records")
+    except Exception as e:
+        print(f"Error occurred while deleting duplicates: {e}")
+
+    conn.commit()  # Ensure commit at the end
