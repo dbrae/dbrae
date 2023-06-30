@@ -1,0 +1,75 @@
+import pandas as pd
+import re
+import os
+import glob
+from datetime import datetime
+
+# Path to the "scraped" folder
+folder_path = 'scraped'
+
+# Get a list of all CSV files in the folder that start with "properties"
+csv_files = glob.glob(os.path.join(folder_path, 'properties*.csv'))
+
+# Find the most recently modified file in the list
+filename = max(csv_files, key=os.path.getmtime)
+
+# Get the modification time for the most recent file
+modification_time = os.path.getmtime(filename)
+last_updated = datetime.fromtimestamp(modification_time)
+
+# Load the CSV file into a DataFrame
+df = pd.read_csv(filename)
+
+# Add a new column "last_updated" and fill it with the modification time
+df['last_updated'] = last_updated
+
+# Define a function to extract bedrooms, bathrooms, parking, and square foot size
+def extract_info(row):
+    if 'Studio' in row:
+        match = re.match(r'Studio(\d+)BA(\d+) Parking([0-9,]+) sqft', row)
+        if match:
+            return pd.Series([0, float(match.group(1)), int(match.group(2)), float(match.group(3).replace(',', ''))])
+        else:
+            return pd.Series([None, None, None, None])
+    else:
+        match = re.match(r'(\d+)BD(\d+)BA(\d+) Parking([0-9,]+) sqft', row)
+        if match:
+            return pd.Series([float(match.group(1)), float(match.group(2)), int(match.group(3)), float(match.group(4).replace(',', ''))])
+        else:
+            return pd.Series([None, None, None, None])
+
+# Apply the function to the "Bedrooms" column and create new columns for the extracted information
+df[['bedrooms', 'bathrooms', 'parking', 'sqft']] = df['bedrooms'].apply(extract_info)
+
+# Define a function to extract maintenance fee and MLS number
+def extract_maint_mls(row):
+    # Check if the row is not null
+    if pd.notnull(row):
+        maint_match = re.search(r'Maint\. Fee \$([0-9,]+)', row)
+        mls_match = re.search(r'MLS#: (\w+)', row)
+        maint_fee = int(maint_match.group(1).replace(',', '')) if maint_match else None
+        mls = mls_match.group(1) if mls_match else None
+        return pd.Series([maint_fee, mls])
+    else:
+        return pd.Series([None, None])
+
+# Apply the function to the "Maintenance Fee" column and create new columns for the extracted information
+df[['maintenance_fee', 'mls']] = df['maintenance_fee'].apply(extract_maint_mls)
+
+# Remove the dollar sign and comma from each entry under the 'Price' column
+df['price'] = df['price'].str.replace('$', '').str.replace(',', '')
+
+# Convert the 'Price' column to float
+df['price'] = df['price'].astype(float)
+
+# Calculate the Price per Sqft and create a new column 'Ppsqft'
+df['ppsqft'] = df['price'] / df['sqft']
+
+# Create the "cleaned" folder if it doesn't exist
+cleaned_folder = 'scraped/cleaned'
+if not os.path.exists(cleaned_folder):
+    os.makedirs(cleaned_folder)
+
+# Save the cleaned DataFrame to a new CSV file in the "cleaned" folder
+cleaned_filename = f'{cleaned_folder}/cleaned_{os.path.basename(filename)}'
+df.to_csv(cleaned_filename, index=False)
