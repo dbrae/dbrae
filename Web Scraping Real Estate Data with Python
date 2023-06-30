@@ -1,0 +1,131 @@
+import random
+import time
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
+import pandas as pd
+import math
+import os
+
+# Dictionary mapping neighborhood numbers to neighborhood names
+neighborhoods = {
+    '676': 'Coal Harbour',
+    '678': 'Davie Village',
+    '673': 'Downtown',
+    '674': 'Downtown Eastside',
+    '677': 'Gastown',
+    '672': 'West End',
+    '675': 'Yaletown',
+    '680': 'Grandview-Woodland',
+    '681': 'Hastings-Sunrise',
+    '683': 'Kensington-Cedar cottage',
+    '721': 'Mount Pleasent',
+    '722': 'Renfrew-Collingwood',
+    '682': 'Riley Park',
+    '679': 'Strathcona',
+    '692': 'Kerrisdale',
+    '696': 'Killarney',
+    '693': 'Marpole',
+    '1229': 'Oakridge',
+    '694': 'Sunset',
+    '695': 'Victoria-Fraserview',
+    '687': 'Arbutus-Ridge',
+    '686': 'Dunbar-Southlands',
+    '1228': 'Fairview',
+    '691': 'Falser Creek',
+    '685': 'Kitsilano',
+    '688': 'Shaughnessy',
+    '689': 'South Cambie',
+    '690': 'University',
+    '684': 'West Point Grey',
+}
+
+# Setup the driver
+s = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=s)
+
+# Get the current date and time
+now = time.strftime("%Y-%m-%d %H-%M-%S")  # Modified format for filename
+
+# User agent strings
+user_agents = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36 Edg/96.0.1054.57",
+]
+
+# Empty list to hold dictionaries (each representing a property)
+properties = []
+
+# Iterate through neighborhoods
+for number, neighborhood in neighborhoods.items():
+    # Get the number of listings for the current neighborhood
+    url = f"https://property.ca/vancouver?mode=Sale&neighbourhood_id={number}"
+    driver.get(url)
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    listing_count_div = soup.find('div', class_='styles___ListingCount-sc-104l5r1-5 DZXl')
+    listing_count = int(listing_count_div.text) if listing_count_div else 0
+    max_pages = math.ceil(listing_count / 48)
+
+    # Iterate through pages 1 to max_pages for each neighborhood
+    for i in range(1, max_pages + 1):
+        url = f"https://property.ca/vancouver?mode=Sale&neighbourhood_id={number}&page={i}"
+        driver.get(url)
+
+        # Random delay between 2 to 5 seconds
+        delay = random.uniform(2, 5)
+        time.sleep(delay)
+
+        # Randomly select a user agent string
+        user_agent = random.choice(user_agents)
+        driver.execute_cdp_cmd("Network.setUserAgentOverride", {"userAgent": user_agent})
+
+        # Now we have the page, let BeautifulSoup do the rest!
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+
+        # Locate property elements on the page
+        property_elements = soup.find_all('div', class_='styles___PreviewContent-sc-54qk44-3 kGcPgm')
+
+        for prop in property_elements:
+            # Extract desired information about the property
+            address_div = prop.find('address', class_='styles___Address-sc-54qk44-13 kJLXXT')
+            price_div = prop.find('div', class_='styles___AskingPrice-sc-54qk44-4 deOfjO')
+            bedbathbeyond_div = prop.find('div', class_='styles___InfoHolder-sc-54qk44-7 buduQR')
+            listed_div = prop.find('div', class_='styles___ListedDays-sc-54qk44-6 dUuebT')
+            maintenance_div = prop.find('div', class_='styles___MaintHolder-sc-54qk44-10 BqHBp')
+
+            address = address_div.text if address_div else None
+            price = price_div.text if price_div else None
+            bedbathbeyond = bedbathbeyond_div.text if bedbathbeyond_div else None
+            listed = listed_div.text if listed_div else None
+            maintenance = maintenance_div.text if maintenance_div else None
+
+            # Create a dictionary with the property details and append to list
+            properties.append({
+                'address': address,
+                'price': price,
+                'bedrooms': bedbathbeyond,
+                'listed': listed,
+                'maintenance_fee': maintenance,
+                'neighborhood': neighborhood,  # Add the neighborhood key-value pair
+            })
+
+        # Random delay between 2 to 5 seconds before proceeding to the next page
+        delay = random.uniform(2, 5)
+        time.sleep(delay)
+
+# Quit the driver
+driver.quit()
+
+# Convert list of properties to DataFrame
+df = pd.DataFrame(properties)
+
+# Create the "scraped" folder if it doesn't exist
+folder_name = "scraped"
+if not os.path.exists(folder_name):
+    os.makedirs(folder_name)
+
+# Save DataFrame to CSV with current date and time in the "scraped" folder
+filename = f'{folder_name}/properties_{now}.csv'
+df.to_csv(filename, index=False)
