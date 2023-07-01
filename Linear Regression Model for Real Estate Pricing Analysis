@@ -1,0 +1,171 @@
+import pandas as pd
+import psycopg2
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Read PostgreSQL credentials from file
+with open('postgres_credentials.txt', 'r') as file:
+    postgres_credentials = file.read().splitlines()
+
+# Connect to your PostgreSQL DB
+conn = psycopg2.connect(
+    dbname=postgres_credentials[0],
+    user=postgres_credentials[1],
+    password=postgres_credentials[2],
+    host=postgres_credentials[3]
+) 
+
+# Open a cursor to perform database operations
+cur = conn.cursor()
+
+# Execute SQL command
+cur.execute("SELECT Neighborhood, Ppsqft, Sqft, Price, Maintenance_Fee FROM realestate")
+
+# Fetch all the rows
+db_data = cur.fetchall()
+
+# Close communication with the database
+cur.close()
+conn.close()
+
+# Convert the data into a DataFrame
+df = pd.DataFrame(db_data, columns=['Neighborhood', 'Ppsqft', 'Sqft', 'Price', 'Maintenance_Fee'])
+
+# Replace NaN values in Maintenance_Fee column with 0
+df['Maintenance_Fee'] = df['Maintenance_Fee'].fillna(0)
+
+# Drop rows with NaN values in Ppsqft and Sqft columns
+df = df.dropna(subset=['Ppsqft', 'Sqft'])
+
+# Define a function to remove outliers based on highest price
+def remove_outliers(df, neighborhood):
+    threshold = df[df['Neighborhood'] == neighborhood]['Price'].max() / 2
+    idx = df[(df['Neighborhood'] == neighborhood) & (df['Price'] > threshold)]['Price'].idxmax()
+    df = df.drop(idx)
+    return df
+
+# Loop through each neighborhood and remove outliers based on highest price
+for neighborhood in df['Neighborhood'].unique():
+    df = remove_outliers(df, neighborhood)
+
+# Separate properties with and without maintenance fees
+df_with_maintenance = df[df['Maintenance_Fee'] > 0]
+df_without_maintenance = df[df['Maintenance_Fee'] == 0]
+
+# The features 'Ppsqft' and 'Sqft' to predict 'Price'
+X = df[['Ppsqft', 'Sqft']]  # Features
+y = df['Price']  # Target
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+predictions = model.predict(X_test)
+
+# Calculate the MAE for all properties
+mae_all = mean_absolute_error(y_test, predictions)
+print(f'MAE for all data: {mae_all}')
+
+# Calculate and print MAE for properties with maintenance fees
+X_with_maintenance = df_with_maintenance[['Ppsqft', 'Sqft']]  # Features
+y_with_maintenance = df_with_maintenance['Price']  # Target
+
+X_train_with_maintenance, X_test_with_maintenance, y_train_with_maintenance, y_test_with_maintenance = train_test_split(
+    X_with_maintenance, y_with_maintenance, test_size=0.2, random_state=42)
+
+predictions_with_maintenance = model.predict(X_test_with_maintenance)
+
+mae_with_maintenance = mean_absolute_error(y_test_with_maintenance, predictions_with_maintenance)
+print(f'MAE for properties with maintenance fee: {mae_with_maintenance}')
+
+# Calculate and print MAE for properties without maintenance fees
+X_without_maintenance = df_without_maintenance[['Ppsqft', 'Sqft']]  # Features
+y_without_maintenance = df_without_maintenance['Price']  # Target
+
+# Initialize empty dictionaries to store the MAE values for each neighborhood
+mae_values_with_maintenance = {}
+mae_values_without_maintenance = {}
+
+# Define the model once and use it for all
+model = LinearRegression()
+
+# Initialize dictionaries to store the number of samples for each neighborhood
+sample_size_with_maintenance = {}
+sample_size_without_maintenance = {}
+
+# Loop through each neighborhood for properties with maintenance fee
+for neighborhood in df_with_maintenance['Neighborhood'].unique():
+    # Filter data for the current neighborhood
+    X_neighborhood_with_maintenance = X_with_maintenance[df_with_maintenance['Neighborhood'] == neighborhood]
+    y_neighborhood_with_maintenance = y_with_maintenance[df_with_maintenance['Neighborhood'] == neighborhood]
+
+    if len(X_neighborhood_with_maintenance) < 5:
+        continue  # Skip if there are less than 2 samples
+
+    X_train, X_test, y_train, y_test = train_test_split(X_neighborhood_with_maintenance, y_neighborhood_with_maintenance, test_size=0.2, random_state=42)
+
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+
+    mae = mean_absolute_error(y_test, predictions)
+    print(f'MAE for neighborhood {neighborhood} with maintenance fee: {mae}')
+    mae_values_with_maintenance[neighborhood] = mae
+    # Store the number of samples for the current neighborhood
+    sample_size_with_maintenance[neighborhood] = len(X_neighborhood_with_maintenance)
+
+# Loop through each neighborhood for properties without maintenance fee
+for neighborhood in df_without_maintenance['Neighborhood'].unique():
+    # Filter data for the current neighborhood
+    X_neighborhood_without_maintenance = X_without_maintenance[df_without_maintenance['Neighborhood'] == neighborhood]
+    y_neighborhood_without_maintenance = y_without_maintenance[df_without_maintenance['Neighborhood'] == neighborhood]
+
+    if len(X_neighborhood_without_maintenance) < 5:
+        continue  # Skip if there are less than 2 samples
+
+    X_train, X_test, y_train, y_test = train_test_split(X_neighborhood_without_maintenance, y_neighborhood_without_maintenance, test_size=0.2, random_state=42)
+
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+
+    mae = mean_absolute_error(y_test, predictions)
+    print(f'MAE for neighborhood {neighborhood} without maintenance fee: {mae}')
+    mae_values_without_maintenance[neighborhood] = mae
+    # Store the number of samples for the current neighborhood
+    sample_size_without_maintenance[neighborhood] = len(X_neighborhood_without_maintenance)
+
+# Plot MAE for neighborhoods with and without maintenance fees
+plt.figure(figsize=(12, 8))
+plt.title('MAE by Neighborhood')
+plt.xlabel('MAE')
+
+# Generate a list of neighborhood labels for y-axis
+neighborhood_labels = list(mae_values_with_maintenance.keys())
+neighborhood_indices = np.arange(len(neighborhood_labels))
+
+# Set the y-axis labels to neighborhood names
+plt.yticks(neighborhood_indices, neighborhood_labels)
+
+# Set the bar width
+bar_width = 0.50
+
+# Draw the MAE bars and add the number of samples
+for index, neighborhood in enumerate(neighborhood_labels):
+    mae_with_maintenance = mae_values_with_maintenance.get(neighborhood, 0)
+    mae_without_maintenance = mae_values_without_maintenance.get(neighborhood, 0)
+    plt.barh(index - bar_width / 2, mae_with_maintenance, color='blue', height=bar_width, label='With Maintenance Fee' if index == 0 else "")
+    plt.barh(index + bar_width / 2, mae_without_maintenance, color='orange', height=bar_width, label='Without Maintenance Fee' if index == 0 else "")
+    
+    # Add the number of samples text inside the bars
+    if neighborhood in sample_size_with_maintenance:
+        plt.text(mae_with_maintenance, index - bar_width / 2, str(sample_size_with_maintenance[neighborhood]), color='black', va='center')
+    if neighborhood in sample_size_without_maintenance:
+        plt.text(mae_without_maintenance, index + bar_width / 2, str(sample_size_without_maintenance[neighborhood]), color='black', va='center')
+
+# Add legend
+plt.legend()
+
+plt.show()
