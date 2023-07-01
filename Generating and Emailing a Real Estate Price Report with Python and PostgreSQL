@@ -41,8 +41,8 @@ with open('sendgrid_api_key.txt', 'r') as file:
 
 # Send the report via email
 message = Mail(
-    from_email='dbrae9@gmail.com',
-    to_emails='braedendavidson@gmail.com',
+    from_email='your_email@example.com',
+    to_emails='recipient@example.com',
     subject='Average Home Prices Report',
     plain_text_content=report
 )
