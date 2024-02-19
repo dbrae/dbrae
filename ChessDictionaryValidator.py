@@ -11,8 +11,26 @@ def isValidChessBoard():
     bpieces, wpieces = 0, 0
     bking, wking, bpawn, wpawn = 0, 0, 0, 0
 
-    #returns true or false if board if valid
+    if 'bking' in board.values():
+        bking += 1
+    if 'wking' in board.values():
+        wking += 1
+    if 'bpawn' in board.values():
+        bpawn += 1
+    if 'wpawn' in board.values():
+        wpawn += 1
+    print(bking, wking, bpawn, wpawn)
+
+    #count the number of black and white pieces
+    for piece in board.values():
+        if piece[0] == 'b':
+            bpieces += 1
+        elif piece[0] == 'w':
+            wpieces += 1
+    print(bpieces, wpieces)
+    
     #one black king and one white king
+    
     if bking and wking != 1:
         return False
     
@@ -28,5 +46,10 @@ def isValidChessBoard():
             return False
             
     #pieces begin with either 'w' or 'b' followed by 'pawn', 'knight', 'bishop', 'rook', 'queen', or 'king'
+    for piece in board.values():
+        if piece[0] not in colors or piece[1:] not in pieces:
+            return False    
     #should detect when a bug has resulted in an improper chess board state
+    else :
+        return True
 print(isValidChessBoard())
