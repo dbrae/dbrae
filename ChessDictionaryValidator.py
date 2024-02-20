@@ -19,7 +19,7 @@ def isValidChessBoard():
         bpawn += 1
     if 'wpawn' in board.values():
         wpawn += 1
-    print(bking, wking, bpawn, wpawn)
+    print('Black kings: ' + str(bking) + ' White Kings: ' + str(wking) +' Black Pawns: ' + str(bpawn) + ' White Pawns: ' + str(wpawn))
 
     #count the number of black and white pieces
     for piece in board.values():
