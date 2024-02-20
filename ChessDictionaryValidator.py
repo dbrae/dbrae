@@ -30,18 +30,17 @@ def isValidChessBoard():
     print('There are ' + str(bpieces) + ' black pieces on the board and ' + str(wpieces) + ' white pieces on the board.')
 
     #one black king and one white king
-    
     if bking and wking == 0:
         return 'There should be one black king and one white king on the board.'
     
     #each player can have at most 16 pieces
-    if bpieces > 16:
+    if bpieces and wpieces > 16:
         return 'There should be no more than 16 pieces for each player.'
-    if wpieces > 16:
-        return 'There should be no more than 16 pieces for each player.'
+    
     #no more than 8 pawns
     if bpawn or wpawn > 8:
         return 'There should be no more than 8 pawns for each player.'
+    
     #all pieces must be on a valid space from '1a' to '8h'
     for pos in board.keys():
         if pos[0] not in x or pos[1] not in y:
@@ -51,7 +50,9 @@ def isValidChessBoard():
     for piece in board.values():
         if piece[0] not in colors or piece[1:] not in pieces:
             return False    
+        
     #should detect when a bug has resulted in an improper chess board state
     else :
         return True
+    
 print(isValidChessBoard())
