@@ -12,5 +12,5 @@ for i in range(len(lines)): # loop through all indexes in the "lines" list
 
 text = '\n'.join(lines)
 
-pyperclip.copy(text)
 #copy the new text to the clipboard
+pyperclip.copy(text)
