@@ -21,6 +21,40 @@ class MyZombie:
                 diceRollResults = zombiedice.roll()
             else:
                 break
+        
+    
+class RandomCoinFlipZombie:
+    def __init__(self, name):
+        self.name = name
+        
+    def turn(self, gameState):
+        diceRollResults = zombiedice.roll() 
+        while diceRollResults is not None:
+            if random.randint(0, 1) == 0: #randomly decide to stop or continue
+                diceRollResults = zombiedice.roll() #roll again
+            else:
+                break
+class MyZombie:
+    def __init__(self, name):
+        #All zombies must have a name
+        self.name = name
+
+    def turn(self, gameState):
+        #gameState is a dict with info about the current state of the game
+        #You can choose to ignore it in your code
+        diceRollResults = zombiedice.roll() #first roll
+        #roll() returns a dictionary with keys 'brains', 'shotgun', and 'footsteps'
+        #The values are the number of each rolled
+        #The 'rolls' key is a list of (color, result) tuples with the exact roll results
+        #e.g. ('green', 'brains'), ('red', 'shotgun'), ('yellow', 'footsteps')
+        #replace the code here with your strategy
+        brains = 0
+        while diceRollResults is not None:
+            brains += diceRollResults['brains']
+            if brains < 2:
+                diceRollResults = zombiedice.roll()
+            else:
+                break
     
 zombies = (
     zombiedice.examples.RandomCoinFlipZombie(name='Random'),
