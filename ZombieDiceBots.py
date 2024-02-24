@@ -48,6 +48,24 @@ class TwoShotgunsZombie:
                 diceRollResults = zombiedice.roll()
             else:
                 break
+
+class MoreShotgunsThanBrainsZombie:
+    def __init__(self, name):
+        self.name = name
+
+    def turn(self, gameState):
+        diceRollResults = zombiedice.roll() 
+        shotguns = 0
+        brains = 0
+        while diceRollResults is not None:
+            shotguns += diceRollResults['shotgun']
+            brains += diceRollResults['brains']
+            if shotguns < brains:
+                diceRollResults = zombiedice.roll()
+            else:
+                break
+            
+
 class MyZombie:
     def __init__(self, name):
         #All zombies must have a name
