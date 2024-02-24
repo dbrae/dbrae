@@ -26,12 +26,26 @@ class MyZombie:
 class RandomCoinFlipZombie:
     def __init__(self, name):
         self.name = name
-        
+
     def turn(self, gameState):
         diceRollResults = zombiedice.roll() 
         while diceRollResults is not None:
             if random.randint(0, 1) == 0: #randomly decide to stop or continue
                 diceRollResults = zombiedice.roll() #roll again
+            else:
+                break
+
+class TwoShotgunsZombie:
+    def __init__(self, name):
+        self.name = name
+
+    def turn(self, gameState):
+        diceRollResults = zombiedice.roll() 
+        shotguns = 0
+        while diceRollResults is not None:
+            shotguns += diceRollResults['brains']
+            if shotguns < 2:
+                diceRollResults = zombiedice.roll()
             else:
                 break
 class MyZombie:
