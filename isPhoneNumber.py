@@ -22,3 +22,9 @@ for i in range(len(message)):
     if isPhoneNumber(chunk):
         print('Phone number found: ' + chunk)
 print('Done')
+
+#or use regular expression
+#import re
+#phoneNumRegex = re.compile(r'\d\d\d-\d\d\d-\d\d\d\d')
+#mo = phoneNumRegex.search('My number is 415-555-4242.')
+#print('Phone number found: ' + mo.group())
