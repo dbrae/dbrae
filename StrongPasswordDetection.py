@@ -5,24 +5,20 @@
 import re
 
 def strongPasswordDetection(password):
-    #at least 8 characters long
-    if len(password) < 8:
-        return False
-    #contains both uppercase and lowercase characters
-    upperCaseRegex = re.compile(r'[A-Z]')
-    lowerCaseRegex = re.compile(r'[a-z]')
-    #has at least one digit
-    digitRegex = re.compile(r'[0-9]')
-    if upperCaseRegex.search(password) == None:
-        return False
-    if lowerCaseRegex.search(password) == None:
-        return False
-    if digitRegex.search(password) == None:
-        return False
-    return True
+    # Regex pattern that checks:
+    # - at least 8 characters
+    # - at least one uppercase letter
+    # - at least one lowercase letter
+    # - at least one digit
+    # This pattern allows for characters beyond alphanumeric to support stronger security practices if desired.
+    pattern = re.compile(
+        r'^(?=.*[A-Z])'  # at least one uppercase letter
+        r'(?=.*[a-z])'   # at least one lowercase letter
+        r'(?=.*[0-9])'   # at least one digit
+        r'.{8,}$'        # at least 8 characters in total
+    )
+    return bool(pattern.search(password))
 
+# Example usage
 password = 'Password123'
-print(strongPasswordDetection(password))
-
-
-
+print(strongPasswordDetection(password))  # Output should be True if the password meets the criteria
