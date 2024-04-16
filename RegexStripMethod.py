@@ -5,12 +5,16 @@
 
 import re
 
-def regex_strip(string, remove = ''):
-        if remove == '':
-            strip_regex = re.compile(r'^\s+|\s+$')
-            return strip_regex.sub('', string)
-        else:
-            strip_regex = re.compile(r'[' + remove + ']+')
-            return strip_regex.sub('', string)
-        
+def regex_strip(string, chars=None):
+    if chars is None:
+        strip_regex = re.compile(r'^\s+|\s+$')
+    else:
+        chars = re.escape(chars)
+        strip_regex = re.compile(f'^[{chars}]+|[{chars}]+$')
+    return strip_regex.sub('', string)
+
+
 print(regex_strip('  Hello, World!  '))
+
+
+
