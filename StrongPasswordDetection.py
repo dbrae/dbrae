@@ -12,5 +12,17 @@ def strongPasswordDetection(password):
     upperCaseRegex = re.compile(r'[A-Z]')
     lowerCaseRegex = re.compile(r'[a-z]')
     #has at least one digit
+    digitRegex = re.compile(r'[0-9]')
+    if upperCaseRegex.search(password) == None:
+        return False
+    if lowerCaseRegex.search(password) == None:
+        return False
+    if digitRegex.search(password) == None:
+        return False
+    return True
+
+password = 'Password123'
+print(strongPasswordDetection(password))
+
 
 
