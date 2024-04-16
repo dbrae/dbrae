@@ -9,6 +9,8 @@ def strongPasswordDetection(password):
     if len(password) < 8:
         return False
     #contains both uppercase and lowercase characters
+    upperCaseRegex = re.compile(r'[A-Z]')
+    lowerCaseRegex = re.compile(r'[a-z]')
     #has at least one digit
 
 
