@@ -7,7 +7,7 @@ import pyinputplus as pyip
 while True:
     promt = 'Vous voulez savoir comment occuper un idiot pendant des heures?\n'
     response = pyip.inputYesNo(promt, yesVal='oui', noVal='non')
-    if response == 'oui':
+    if response == 'non':
         break
 
 print('Thank you. Have a nice day.')
