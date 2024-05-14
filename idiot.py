@@ -5,9 +5,9 @@
 import pyinputplus as pyip
 
 while True:
-    promt = 'Want to know how to keep an idiot busy for hours?\n'
-    response = pyip.inputYesNo(promt)
-    if response == 'no':
+    promt = 'Vous voulez savoir comment occuper un idiot pendant des heures?\n'
+    response = pyip.inputYesNo(promt, yesVal='oui', noVal='non')
+    if response == 'oui':
         break
 
 print('Thank you. Have a nice day.')
