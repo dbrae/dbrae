@@ -23,4 +23,28 @@ tomato = pyip.inputYesNo('Do you want tomato?')
 sandwiches = pyip.inputInt('How many sandwiches do you want?', min=1)
 
 #come up with prices for each of these options, and have your program display a total cost after the user enters their selection.
+totalCost = 0
+if bread == 'wheat' or bread == 'white' or bread == 'sourdough':
+    totalCost += 1
+if protein == 'chicken':
+    totalCost += 2.75
+elif protein == 'turkey':
+    totalCost += 2
+elif protein == 'ham':
+    totalCost += 2.25
+elif protein == 'tofu':
+    totalCost += 2.5
+if cheese == 'yes':
+    totalCost += 1
+if mayo == 'yes':
+    totalCost += 0.5
+if mustard == 'yes':
+    totalCost += 0.5
+if lettuce == 'yes':
+    totalCost += 0.5
+if tomato == 'yes':
+    totalCost += 0.5
+totalCost *= sandwiches
+print('Your total cost is $' + str(totalCost))
+
 
