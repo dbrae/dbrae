@@ -17,5 +17,7 @@ if cheese == 'yes':
 mayo = pyip.inputYesNo('Do you want mayo?')
 
 #using inputInt() to ask how many sandwiches they want. Make sure this number is 1 or more.
+sandwiches = pyip.inputInt('How many sandwiches do you want?', min=1)
 
 #come up with prices for each of these options, and have your program display a total cost after the user enters their selection.
+
