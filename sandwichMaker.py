@@ -15,6 +15,9 @@ if cheese == 'yes':
 
 #using inputYesNo() to ask if they want mayo, mustard, lettuce, or tomato
 mayo = pyip.inputYesNo('Do you want mayo?')
+mustard = pyip.inputYesNo('Do you want mustard?')
+lettuce = pyip.inputYesNo('Do you want lettuce?')
+tomato = pyip.inputYesNo('Do you want tomato?')
 
 #using inputInt() to ask how many sandwiches they want. Make sure this number is 1 or more.
 sandwiches = pyip.inputInt('How many sandwiches do you want?', min=1)
