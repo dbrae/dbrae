@@ -24,3 +24,6 @@ for questionNumber in range(numberOfQuestions):
         # This block runs if no exceptions were raised in the try block.
         print('Correct!')
         correctAnswers += 1
+    time.sleep(1)  # Brief pause to let user see the result.
+print('Score: %s / %s' % (correctAnswers, numberOfQuestions))
+
