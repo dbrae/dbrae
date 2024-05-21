@@ -1,4 +1,8 @@
+import pyinputplus as pyip
+
 #using inputMenu() for a bread type: wheat, white, sourdough
+bread = pyip.inputMenu(['wheat', 'white', 'sourdough'], numbered=True)
+
 #using inputMenu() for a protein type: chicken, turkey, ham, tofu
 #using inputYesNo() to ask if they want cheese
 #if so, using inputMenu() to pick a cheese type: cheddar, Swiss, mozzarella
